@@ -20,7 +20,8 @@ module.exports = function libp2p (self) {
           webRTCStar: get(config, 'Discovery.webRTCStar.Enabled'),
           bootstrap: get(config, 'Bootstrap'),
           dht: get(self._options, 'EXPERIMENTAL.dht'),
-          modules: self._libp2pModules
+          modules: self._libp2pModules,
+          relay: get(config, 'Relay')
         }
 
         self._libp2pNode = new Node(self._peerInfo, self._peerInfoBook, options)
