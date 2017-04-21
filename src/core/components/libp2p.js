@@ -4,6 +4,7 @@
 const Node = require('../runtime/libp2p-nodejs')
 const promisify = require('promisify-es6')
 const get = require('lodash.get')
+const mapKeys = require('lodash.mapKeys')
 
 module.exports = function libp2p (self) {
   return {
@@ -23,6 +24,8 @@ module.exports = function libp2p (self) {
           modules: self._libp2pModules,
           relay: get(config, 'Relay')
         }
+
+        options.relay = mapKeys(get(config, 'Relay'), (v, k) => k.toLowerCase())
 
         self._libp2pNode = new Node(self._peerInfo, self._peerInfoBook, options)
 
