@@ -5,7 +5,6 @@
 const chai = require('chai')
 const dirtyChai = require('dirty-chai')
 const expect = chai.expect
-chai.use(dirtyChai)
 const waterfall = require('async/waterfall')
 const parallel = require('async/parallel')
 const isNode = require('detect-node')
@@ -13,17 +12,19 @@ const isNode = require('detect-node')
 const IPFS = require('../../src/core')
 const createTempRepo = require('../utils/create-repo-node.js')
 
+chai.use(dirtyChai)
+
 describe('circuit', () => {
   if (!isNode) {
     return
   }
 
   describe('transfer over circuit', function () {
-    this.timeout(5000)
+    this.timeout(50000)
 
     let ipfsRelay
-    let ipfsSrc
     let ipfsDst
+    let ipfsSrc
 
     before((done) => {
       ipfsRelay = new IPFS({
@@ -32,14 +33,16 @@ describe('circuit', () => {
           Addresses: {
             Swarm: [
               '/ip4/0.0.0.0/tcp/9000',
-              '/ip4/0.0.0.0/tcp/9000/ws'
+              '/ip4/0.0.0.0/tcp/9001/ws'
             ]
           },
           Bootstrap: [],
-          Relay: {
-            Circuit: {
-              Enabled: true,
-              Active: true
+          Experimental: {
+            Relay: {
+              Circuit: {
+                Enabled: true,
+                Active: false
+              }
             }
           },
           Identity: {
@@ -49,24 +52,24 @@ describe('circuit', () => {
         }
       })
 
-      ipfsSrc = new IPFS({
+      ipfsDst = new IPFS({
         repo: createTempRepo(),
         config: {
           Addresses: {
             Swarm: [
-              '/ip4/0.0.0.0/tcp/9001'
+              '/ip4/0.0.0.0/tcp/9002'
             ]
           },
           Bootstrap: []
         }
       })
 
-      ipfsDst = new IPFS({
+      ipfsSrc = new IPFS({
         repo: createTempRepo(),
         config: {
           Addresses: {
             Swarm: [
-              '/ip4/0.0.0.0/tcp/9002/ws'
+              '/ip4/0.0.0.0/tcp/9003/ws'
             ]
           },
           Bootstrap: []
@@ -78,20 +81,20 @@ describe('circuit', () => {
         (pCb) => ipfsSrc.once('start', pCb),
         (pCb) => ipfsDst.once('start', pCb)
       ], () => {
-        // get everything inter-connected
         waterfall([
           (cb) => ipfsSrc
             .swarm
-            .connect(`/ip4/0.0.0.0/tcp/9000/ipfs/QmUGuDXBhWKJwoNNMhnsLGSzzDfjdSt81SoTHcMu1dXBrV`,
-              () => cb()),
+            .connect(`/ip4/0.0.0.0/tcp/9001/ws/ipfs/QmUGuDXBhWKJwoNNMhnsLGSzzDfjdSt81SoTHcMu1dXBrV`, () => cb()),
+          (cb) => setTimeout(cb, 1000),
           (cb) => ipfsDst
             .swarm
-            .connect(`/ip4/0.0.0.0/tcp/9000/ws/ipfs/QmUGuDXBhWKJwoNNMhnsLGSzzDfjdSt81SoTHcMu1dXBrV`,
-              () => cb()),
+            .connect(`/ip4/0.0.0.0/tcp/9000/ipfs/QmUGuDXBhWKJwoNNMhnsLGSzzDfjdSt81SoTHcMu1dXBrV`, () => cb()),
+          (cb) => setTimeout(cb, 1000),
           (cb) => ipfsSrc.id(cb),
-          (id, cb) => ipfsRelay.swarm.connect(`/ip4/0.0.0.0/tcp/9001/ipfs/${id.id}`, () => cb()),
+          (id, cb) => ipfsRelay.swarm.connect(`/ip4/0.0.0.0/tcp/9002/ipfs/${id.id}`, () => cb()),
+          (cb) => setTimeout(cb, 1000),
           (cb) => ipfsDst.id(cb),
-          (id, cb) => ipfsRelay.swarm.connect(`/ip4/0.0.0.0/tcp/9002/ws/ipfs/${id.id}`, () => cb())
+          (id, cb) => ipfsRelay.swarm.connect(`/ip4/0.0.0.0/tcp/9003/ws/ipfs/${id.id}`, () => cb())
         ], done)
       })
     })
@@ -105,27 +108,24 @@ describe('circuit', () => {
     })
 
     it('should be able to connect over circuit', (done) => {
-      ipfsDst.id((err, id) => {
+      ipfsSrc.swarm.connect(ipfsDst._peerInfo, (err, conn) => {
         expect(err).to.be.null()
-        ipfsSrc.swarm.connect(id.addresses[0], (err, conn) => {
-          expect(err).to.be.null()
-          expect(conn).to.not.be.null()
-          done()
-        })
+        expect(conn).to.not.be.null()
+        done()
       })
     })
 
     it('should be able to transfer data over circuit', (done) => {
       waterfall([
-        (cb) => ipfsDst.id(cb),
         // dial destination over WS /ip4/0.0.0.0/tcp/9002/ws
-        (id, cb) => ipfsSrc.swarm.connect(id.addresses[0], cb),
-        (conn, cb) => ipfsSrc.files.add(new ipfsSrc.types.Buffer('Hello world over circuit!'), (err, res) => {
-          expect(err).to.be.null()
-          expect(res[0]).to.not.be.null()
-          cb(null, res[0].hash)
-        }),
-        (fileHash, cb) => ipfsDst.files.cat(fileHash, function (err, stream) {
+        (cb) => ipfsSrc.swarm.connect(ipfsDst._peerInfo, cb),
+        (conn, cb) => ipfsDst.files.add(new ipfsDst.types.Buffer('Hello world over circuit!'),
+          (err, res) => {
+            expect(err).to.be.null()
+            expect(res[0]).to.not.be.null()
+            cb(null, res[0].hash)
+          }),
+        (fileHash, cb) => ipfsSrc.files.cat(fileHash, function (err, stream) {
           expect(err).to.be.null()
 
           var res = ''
