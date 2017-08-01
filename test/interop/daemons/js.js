@@ -52,7 +52,7 @@ class JsDaemon extends EventEmitter {
         throw err
       }
       this._started = true
-      this.api = new IPFSAPI(this.node.apiMultiaddr)
+      this.api = new IPFSAPI(this.node.apiMultiaddr, opts.config)
 
       this.emit('start')
     })

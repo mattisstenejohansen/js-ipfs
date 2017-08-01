@@ -26,7 +26,7 @@ module.exports = function preStart (self) {
         config.Addresses.Swarm.forEach((addr) => {
           let ma = multiaddr(addr)
 
-          if (!mafmt.IPFS.matches(ma)) {
+          if (mafmt.IPFS.matches(ma) && !ma.protoNames().indexOf('ipfs') > -1) {
             ma = ma.encapsulate('/ipfs/' + self._peerInfo.id.toB58String())
           }
 
