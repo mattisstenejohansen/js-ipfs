@@ -111,9 +111,7 @@ describe('circuit', function () {
       parallel([
         (cb) => ipfsSrc.swarm.connect(addr[0], cb),
         (cb) => ipfsDst.swarm.connect(addr[1], cb)
-      ], (err) => {
-        setTimeout(() => done(err), 2000)
-      })
+      ], (err) => setTimeout(done, 2000, err))
     })
   })
 
