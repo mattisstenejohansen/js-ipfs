@@ -32,6 +32,15 @@ function spawnDaemon (num, callback) {
       webRTCStar: {
         Enabled: false
       }
+    },
+    EXPERIMENTAL: {
+      Relay: {
+        Enabled: true,
+        HOP: {
+          Enabled: true,
+          Active: false
+        }
+      }
     }
   }
 
