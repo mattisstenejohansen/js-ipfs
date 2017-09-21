@@ -5,6 +5,7 @@
 const chai = require('chai')
 const expect = chai.expect
 const waterfall = require('async/waterfall')
+const bl = require('bl')
 
 const createTempRepo = require('../../utils/create-repo-nodejs')
 const relayConfig = require('../../utils/ipfs-factory-daemon/default-config.json')
@@ -94,21 +95,7 @@ exports.setupJsNode = function setupJsNode (addrs, factory, hop, cb) {
 exports.addAndCat = function addAndCat (data, ipfsSrc, ipfsDst, callback) {
   waterfall([
     (cb) => ipfsDst.files.add(data, cb),
-    (res, cb) => ipfsSrc.files.cat(res[0].hash, function (err, stream) {
-      expect(err).to.be.null()
-      var res = ''
-
-      stream.on('data', function (chunk) {
-        res += chunk.toString()
-      })
-
-      stream.on('error', function (err) {
-        cb(err)
-      })
-
-      stream.on('end', function () {
-        cb(null, res)
-      })
-    })
+    (res, cb) => ipfsSrc.files.cat(res[0].hash, cb),
+    (stream, cb) => stream.pipe(bl(cb))
   ], callback)
 }
