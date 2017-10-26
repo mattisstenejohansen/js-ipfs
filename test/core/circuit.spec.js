@@ -5,196 +5,168 @@
 const chai = require('chai')
 const dirtyChai = require('dirty-chai')
 const expect = chai.expect
-chai.use(dirtyChai)
-
-const _ = require('lodash')
+const parallel = require('async/parallel')
 const series = require('async/series')
 const waterfall = require('async/waterfall')
-const parallel = require('async/parallel')
-const leftPad = require('left-pad')
-const bl = require('bl')
 const API = require('ipfs-api')
+const IPFS = require('../../src')
+const bl = require('bl')
+const PeerInfo = require('peer-info')
+const PeerId = require('peer-id')
 const multiaddr = require('multiaddr')
 const isNode = require('detect-node')
+
 const crypto = require('crypto')
 
-// This gets replaced by '../utils/create-repo-browser.js' in the browser
 const createTempRepo = require('../utils/create-repo-nodejs.js')
 
-const IPFS = require('../../src/core')
+chai.use(dirtyChai)
 
-describe('circuit', () => {
-  let inProcNode1 // Node spawned inside this process
-  let inProcNode2 // Node spawned inside this process
+function addAndCat (data, ipfsSrc, ipfsDst, callback) {
+  waterfall([
+    (cb) => ipfsDst.files.add(data, cb),
+    (res, cb) => ipfsSrc.files.cat(res[0].hash, cb),
+    (stream, cb) => stream.pipe(bl(cb))
+  ], callback)
+}
 
-  beforeEach((done) => {
-    const repo1 = createTempRepo()
-    const repo2 = createTempRepo()
-
-    if (!isNode) {
-      inProcNode1 = new IPFS({
-        repo: repo1,
-        config: {
-          Addresses: {
-            Swarm: []
-          },
-          Discovery: {
-            MDNS: {
-              Enabled: false
-            }
-          },
-          Bootstrap: [],
-          EXPERIMENTAL: {
-            Relay: {
-              Enabled: true,
-              HOP: {
-                Enabled: true,
-                Active: false
-              }
-            }
-          }
-        }
-      })
-      inProcNode2 = new IPFS({
-        repo: repo2,
-        config: {
-          Addresses: {
-            Swarm: []
-          },
-          Discovery: {
-            MDNS: {
-              Enabled: false
-            }
-          },
-          Bootstrap: [],
-          EXPERIMENTAL: {
-            Relay: {
-              Enabled: true,
-              HOP: {
-                Enabled: true,
-                Active: false
-              }
-            }
-          }
-        }
-      })
-    } else {
-      inProcNode1 = new IPFS({
-        repo: repo1,
-        config: {
-          Addresses: {
-            Swarm: ['/ip4/127.0.0.1/tcp/0']
-          },
-          Discovery: {
-            MDNS: {
-              Enabled: false
-            }
-          },
-          Bootstrap: [],
-          EXPERIMENTAL: {
-            Relay: {
-              Enabled: true,
-              HOP: {
-                Enabled: true,
-                Active: false
-              }
-            }
-          }
-        }
-      })
-
-      inProcNode2 = new IPFS({
-        repo: repo2,
-        config: {
-          Addresses: {
-            Swarm: ['/ip4/127.0.0.1/tcp/0']
-          },
-          Discovery: {
-            MDNS: {
-              Enabled: false
-            }
-          },
-          Bootstrap: [],
-          EXPERIMENTAL: {
-            Relay: {
-              Enabled: true,
-              HOP: {
-                Enabled: true,
-                Active: false
-              }
-            }
-          }
-        }
-      })
+function peerInfoFromObj (obj, callback) {
+  PeerInfo.create(PeerId.createFromB58String(obj.id), (err, peer) => {
+    if (err) {
+      return callback(err)
     }
 
+    expect(err).to.not.exist()
+    obj.addresses.forEach((a) => peer.multiaddrs.add(multiaddr(a)))
+    callback(null, peer)
+  })
+}
+
+function createJsNode (addr) {
+  return new IPFS({
+    repo: createTempRepo(),
+    config: {
+      Addresses: {
+        Swarm: addr
+      },
+      Discovery: {
+        MDNS: {
+          Enabled: false
+        }
+      },
+      Bootstrap: [],
+      EXPERIMENTAL: {
+        Relay: {
+          Enabled: true,
+          HOP: {
+            Enabled: true,
+            Active: false
+          }
+        }
+      }
+    }
+  })
+}
+
+describe('circuit', function () {
+  let jsRelay = new API(`/ip4/127.0.0.1/tcp/31007`)
+  let goRelay = new API(`/ip4/127.0.0.1/tcp/33027`)
+  let node1
+  let node2
+
+  let jsRelayId
+  let goRelayId
+
+  let nodeId1
+  let nodeId2
+
+  before(function (done) {
+    this.timeout(20 * 1000)
+
+    node1 = createJsNode([isNode ? `/ip4/127.0.0.1/tcp/0/ws` : ''])
+    node2 = createJsNode([isNode ? `/ip4/127.0.0.1/tcp/0` : ''])
+
+    node1.on('error', (err) => {
+      expect(err).to.not.exist()
+    })
+
+    node2.on('error', (err) => {
+      expect(err).to.not.exist()
+    })
+
     parallel([
-      (cb) => inProcNode1.on('start', cb),
-      (cb) => inProcNode2.on('start', cb)
+      (cb) => node1.on('start', cb),
+      (cb) => node2.on('start', cb)
+    ], (err) => {
+      expect(err).to.not.exist()
+      parallel([
+        (cb) => jsRelay.id(cb),
+        (cb) => goRelay.id(cb),
+        (cb) => node1.id(cb),
+        (cb) => node2.id(cb)
+      ], (err, res) => {
+        expect(err).to.not.exist()
+        parallel([
+          (cb) => peerInfoFromObj(res[0], cb),
+          (cb) => peerInfoFromObj(res[1], cb),
+          (cb) => peerInfoFromObj(res[2], cb),
+          (cb) => peerInfoFromObj(res[3], cb)
+        ], (err, res1) => {
+          expect(err).to.not.exist()
+          jsRelayId = res1[0]
+          goRelayId = res1[1]
+          nodeId1 = res1[2]
+          nodeId2 = res1[3]
+          done()
+        })
+      })
+    })
+  })
+
+  after(function (done) {
+    parallel([
+      (cb) => node1.stop(cb),
+      (cb) => node2.stop(cb)
     ], done)
   })
 
-  afterEach((done) => inProcNode1.stop(() => done()))
+  it('node1 <-> jsRelay <-> node2', function (done) {
+    const data = crypto.randomBytes(128)
+    series([
+      (cb) => node1.swarm.connect(jsRelayId, cb),
+      (cb) => node2.swarm.connect(jsRelayId, cb),
+      (cb) => setTimeout(cb, 1000),
+      (cb) => node1.swarm.connect(nodeId2, cb)
+    ], (err) => {
+      expect(err).to.not.exist()
+      addAndCat(data,
+        node1,
+        node2,
+        (err, data) => {
+          expect(err).to.not.exist()
+          expect(data).to.be.equal(data)
+          done()
+        })
+    })
+  })
 
-  describe('connections', () => {
-    function wire (targetNode, dialerNode, done) {
-      targetNode.id((err, identity) => {
-        expect(err).to.not.exist()
-        const addr = identity.addresses
-          .map((addr) => multiaddr(addr.toString().split('ipfs')[0]))
-          .filter((addr) => _.includes(addr.protoNames(), 'ws'))[0]
-
-        if (!addr) {
-          // Note: the browser doesn't have a websockets listening addr
-          return done()
-        }
-
-        const targetAddr = addr
-          .encapsulate(multiaddr(`/ipfs/${identity.id}`)).toString()
-          .replace('0.0.0.0', '127.0.0.1')
-
-        dialerNode.swarm.connect(targetAddr, done)
-      })
-    }
-
-    function connectNodes (remoteNode, ipn, done) {
-      series([
-        (cb) => wire(remoteNode, ipn, cb),
-        (cb) => setTimeout(() => {
-          // need timeout so we wait for identify to happen.
-          // This call is just to ensure identify happened
-          wire(ipn, remoteNode, cb)
-        }, 300)
-      ], done)
-    }
-
-    function addNode (num, done) {
-      num = leftPad(num, 3, 0)
-
-      const apiUrl = `/ip4/127.0.0.1/tcp/31${num}`
-      const remoteNode = new API(apiUrl)
-      done(null, remoteNode)
-    }
-
-    it('fetch data over circuit', (done) => {
-      let remoteNode
-      const data = crypto.randomBytes(128)
-      waterfall([
-        (cb) => addNode(13, cb),
-        (node, cb) => {
-          remoteNode = node
-          cb()
-        },
-        (cb) => connectNodes(remoteNode, inProcNode1, cb),
-        (res, cb) => connectNodes(remoteNode, inProcNode2, cb),
-        (res, cb) => inProcNode1.swarm.connect(inProcNode2._peerInfo, cb),
-        (conn, cb) => inProcNode1.files.add(data, cb),
-        (res, cb) => inProcNode2.files.cat(res[0].hash, cb),
-        (stream, cb) => stream.pipe(bl(cb)),
-        (res, cb) => {
-          expect(res).to.be.eql(data)
-          cb()
-        }], done)
+  it('node1 <-> goRelay <-> node2', function (done) {
+    const data = crypto.randomBytes(128)
+    series([
+      (cb) => node1.swarm.connect(goRelayId, cb),
+      (cb) => node2.swarm.connect(goRelayId, cb),
+      (cb) => setTimeout(cb, 1000),
+      (cb) => node1.swarm.connect(nodeId2, cb)
+    ], (err) => {
+      expect(err).to.not.exist()
+      addAndCat(data,
+        node1,
+        node2,
+        (err, data) => {
+          expect(err).to.not.exist()
+          expect(data).to.be.equal(data)
+          done()
+        })
     })
   })
 })
