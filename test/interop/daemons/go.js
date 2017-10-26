@@ -54,7 +54,7 @@ class GoDaemon {
           })
           this.node._run(
             ['log', 'level', 'all', 'debug'],
-            { env: this.node.env },
+            {env: this.node.env},
             cb
           )
         } else {
