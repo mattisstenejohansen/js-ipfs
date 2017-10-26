@@ -39,7 +39,8 @@ function makeBlock (cb) {
 describe('bitswap', () => {
   let inProcNode // Node spawned inside this process
 
-  beforeEach((done) => {
+  beforeEach(function (done) {
+    this.timeout(10000)
     const repo = createTempRepo()
 
     if (!isNode) {

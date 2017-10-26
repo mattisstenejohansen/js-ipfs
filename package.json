@@ -21,7 +21,7 @@
   "scripts": {
     "lint": "aegir lint",
     "build": "aegir build",
-    "test": "aegir test --target node --target browser --no-parallel",
+    "test": "aegir test --target node --target browser --no-cors --no-parallel --timeout 10000",
     "test:node": "aegir test --target node --no-parallel",
     "test:browser": "aegir test --target browser --no-parallel",
     "release": "aegir test release --target node --target browser --no-parallel",
@@ -33,7 +33,7 @@
     "test:unit:node:http": "TEST=http aegir test --target node --no-parallel  ",
     "test:unit:node:gateway": "TEST=gateway aegir test --target node --no-parallel",
     "test:unit:node:cli": "TEST=cli aegir test --target node --no-parallel",
-    "test:unit:browser": "aegir test --target browser --no-parallel",
+    "test:unit:browser": "aegir test --target browser --no-cors --no-parallel",
     "test:interop": "npm run test:interop:node",
     "test:interop:node": "mocha -t 60000 test/interop/node.js",
     "test:interop:browser": "mocha -t 60000 test/interop/browser.js",

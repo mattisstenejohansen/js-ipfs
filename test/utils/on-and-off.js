@@ -29,7 +29,7 @@ function off (tests) {
     })
 
     tests(thing)
-  })
+  }).timeout(10000)
 }
 
 function on (tests) {
@@ -56,7 +56,7 @@ function on (tests) {
     after((done) => factory.dismantle(done))
 
     tests(thing)
-  })
+  }).timeout(10000)
 }
 
 /*
