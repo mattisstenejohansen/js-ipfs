@@ -13,7 +13,7 @@ describe('init', () => {
   let ipfs
 
   const readme = fs.readFileSync(path.join(process.cwd(), '/src/init-files/init-docs/readme'))
-                   .toString('utf-8')
+    .toString('utf-8')
 
   const repoExistsSync = (p) => fs.existsSync(path.join(repoPath, p))
 

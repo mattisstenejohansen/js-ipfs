@@ -77,7 +77,7 @@ describe('circuit', function () {
   let jsRelayId
   let goRelayId
 
-  let nodeId1
+  // let nodeId1
   let nodeId2
 
   before(function (done) {
@@ -115,7 +115,7 @@ describe('circuit', function () {
           expect(err).to.not.exist()
           jsRelayId = res1[0]
           goRelayId = res1[1]
-          nodeId1 = res1[2]
+          // nodeId1 = res1[2]
           nodeId2 = res1[3]
           done()
         })
