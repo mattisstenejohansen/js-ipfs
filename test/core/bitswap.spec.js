@@ -40,7 +40,7 @@ describe('bitswap', () => {
   let inProcNode // Node spawned inside this process
 
   beforeEach(function (done) {
-    this.timeout(10000)
+    this.timeout(20 * 1000)
     const repo = createTempRepo()
 
     if (!isNode) {
@@ -222,7 +222,8 @@ describe('bitswap', () => {
   describe('bitswap API', () => {
     let node
 
-    before((done) => {
+    before(function (done) {
+      this.timeout(20 * 1000)
       node = new IPFS({
         repo: createTempRepo(),
         start: false,

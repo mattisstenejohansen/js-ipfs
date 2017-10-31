@@ -249,4 +249,4 @@ describe('HTTP Gateway', () => {
       })
     })
   })
-})
+}).timeout(10 * 1000)
