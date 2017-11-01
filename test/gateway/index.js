@@ -25,7 +25,8 @@ describe('HTTP Gateway', () => {
   let http = {}
   let gateway
 
-  before((done) => {
+  before(function (done) {
+    this.timeout(20 * 1000)
     const repoPath = path.join(
       os.tmpdir(),
       '/ipfs-' + Math.random().toString().substring(2, 8) + '-' + Date.now()

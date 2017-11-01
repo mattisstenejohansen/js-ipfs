@@ -18,7 +18,6 @@ const multiaddr = require('multiaddr')
 const isNode = require('detect-node')
 const multihashing = require('multihashing-async')
 const CID = require('cids')
-const Buffer = require('safe-buffer').Buffer
 
 // This gets replaced by '../utils/create-repo-browser.js' in the browser
 const createTempRepo = require('../utils/create-repo-nodejs.js')
@@ -63,7 +62,7 @@ describe('bitswap', () => {
         repo: repo,
         config: {
           Addresses: {
-            Swarm: [ '/ip4/127.0.0.1/tcp/0' ]
+            Swarm: ['/ip4/127.0.0.1/tcp/0']
           },
           Discovery: {
             MDNS: {
@@ -144,9 +143,7 @@ describe('bitswap', () => {
         ], done)
       })
 
-      it('3 peers', function (done) {
-        this.timeout(60 * 1000)
-
+      it('3 peers', (done) => {
         let blocks
         const remoteNodes = []
 
@@ -189,11 +186,11 @@ describe('bitswap', () => {
           }), cb)
         ], done)
       })
-    })
+    }).timeout(60 * 1000)
 
     describe('fetches a remote file', () => {
       it('2 peers', (done) => {
-        const file = new Buffer(`I love IPFS <3 ${Math.random()}`)
+        const file = Buffer.from(`I love IPFS <3 ${Math.random()}`)
 
         waterfall([
           // 0. Start node
@@ -263,7 +260,7 @@ describe('bitswap', () => {
 
       it('.wantlist returns an array of wanted blocks', () => {
         expect(node.bitswap.wantlist()).to.eql([])
-      })
+      }).timeout(30 * 1000)
 
       it('returns the stats', () => {
         let stats = node.bitswap.stat()

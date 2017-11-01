@@ -7,7 +7,6 @@ const dirtyChai = require('dirty-chai')
 const expect = chai.expect
 chai.use(dirtyChai)
 const pull = require('pull-stream')
-const Buffer = require('safe-buffer').Buffer
 
 const IPFS = require('../../src/core')
 const createTempRepo = require('../utils/create-repo-nodejs.js')
@@ -61,7 +60,8 @@ describe('files dir', () => {
   describe('with sharding', () => {
     let ipfs
 
-    before((done) => {
+    before(function (done) {
+      this.timeout(10 * 1000)
       ipfs = new IPFS({
         repo: createTempRepo(),
         config: {

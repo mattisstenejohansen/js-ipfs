@@ -36,7 +36,7 @@ describe('create node', () => {
         node.stop()
       })
     })
-  })
+  }).timeout(10 * 1000)
 
   it('custom repo', (done) => {
     const node = new IPFS({
@@ -83,7 +83,7 @@ describe('create node', () => {
         node.stop()
       })
     })
-  })
+  }).timeout(20 * 1000)
 
   it('init: { bits: 1024 }', (done) => {
     const node = new IPFS({
@@ -172,7 +172,7 @@ describe('create node', () => {
     node.once('start', () => node.stop())
 
     node.once('ready', () => node.start())
-  })
+  }).timeout(10 * 1000)
 
   it('init: true, start: false, use callback', (done) => {
     const node = new IPFS({
@@ -263,5 +263,5 @@ describe('create node', () => {
       },
       (cb) => node.stop(cb)
     ], done)
-  })
+  }).timeout(10 * 1000)
 })

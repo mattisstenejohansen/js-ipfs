@@ -62,7 +62,7 @@ describe('init', () => {
         done()
       })
     })
-  })
+  }).timeout(10 * 1000)
 
   it('init docs are written', (done) => {
     ipfs.init({ bits: 1024 }, (err) => {
