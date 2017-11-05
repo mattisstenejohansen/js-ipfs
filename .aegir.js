@@ -9,7 +9,7 @@ const stopNodes = require('./test/utils/spawn-tools').stopNodes
 /*
  * spawns a daemon with ports numbers starting in 10 and ending in `num`
  */
-let before = (done) => {
+const before = (done) => {
   parallel([
     (cb) => spawnJsNode([
       `/ip4/127.0.0.1/tcp/10007`,
