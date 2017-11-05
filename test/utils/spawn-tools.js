@@ -93,12 +93,9 @@ exports.spawnJsNode = (addrs, hop, api, gateway, cb) => {
             Gateway: `/ip4/0.0.0.0/tcp/${gateway}`
           },
           EXPERIMENTAL: {
-            Relay: {
-              Enabled: true,
-              HOP: {
-                Enabled: hop,
-                Active: true
-              }
+            Swarm: {
+              DisableRelay: false,
+              EnableRelayHop: hop
             }
           }
         }), pCb)

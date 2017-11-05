@@ -22,10 +22,10 @@ module.exports = function libp2p (self) {
           dht: get(self._options, 'EXPERIMENTAL.dht'),
           modules: self._libp2pModules,
           relay: {
-            enabled: get(config, 'EXPERIMENTAL.Relay.Enabled', false),
+            enabled: !get(config, 'EXPERIMENTAL.Swarm.DisableRelay', false),
             hop: {
-              enabled: get(config, 'EXPERIMENTAL.Relay.HOP.Enabled', false),
-              active: get(config, 'EXPERIMENTAL.Relay.HOP.Active', false)
+              enabled: get(config, 'EXPERIMENTAL.Swarm.EnableRelayHop', false),
+              active: get(config, 'EXPERIMENTAL.Swarm.RelayHopActive', false)
             }
           }
         }
