@@ -77,7 +77,10 @@ describe('bitswap', () => {
     inProcNode.on('start', () => done())
   })
 
-  afterEach((done) => inProcNode.stop(() => done()))
+  afterEach(function (done) {
+    this.timeout(20 * 1000)
+    inProcNode.stop(() => done())
+  })
 
   describe('connections', () => {
     function wire (targetNode, dialerNode, done) {
@@ -141,7 +144,7 @@ describe('bitswap', () => {
             cb()
           }
         ], done)
-      })
+      }).timeout(20 * 1000)
 
       it('3 peers', (done) => {
         let blocks
@@ -185,7 +188,7 @@ describe('bitswap', () => {
             ], cbI)
           }), cb)
         ], done)
-      })
+      }).timeout(20 * 1000)
     }).timeout(60 * 1000)
 
     describe('fetches a remote file', () => {

@@ -54,14 +54,14 @@ describe('files dir', () => {
       after((done) => {
         ipfs.stop(() => done()) // ignore stop errors
       })
-    })
+    }).timeout(20 * 1000)
   })
 
   describe('with sharding', () => {
     let ipfs
 
     before(function (done) {
-      this.timeout(10 * 1000)
+      this.timeout(50 * 1000)
       ipfs = new IPFS({
         repo: createTempRepo(),
         config: {
@@ -77,7 +77,8 @@ describe('files dir', () => {
       ipfs.once('start', done)
     })
 
-    after((done) => {
+    after(function (done) {
+      this.timeout(20 * 1000)
       ipfs.stop(() => done()) // ignore stop errors
     })
 
@@ -93,6 +94,6 @@ describe('files dir', () => {
           done()
         })
       )
-    })
+    }).timeout(20 * 1000)
   })
 })

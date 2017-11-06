@@ -85,4 +85,4 @@ describe('swarm', () => {
       })
     })
   })
-}).timeout(10 * 1000)
+}).timeout(20 * 1000)

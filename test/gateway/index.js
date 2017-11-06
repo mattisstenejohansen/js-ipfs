@@ -250,4 +250,4 @@ describe('HTTP Gateway', () => {
       })
     })
   })
-}).timeout(10 * 1000)
+}).timeout(20 * 1000)
