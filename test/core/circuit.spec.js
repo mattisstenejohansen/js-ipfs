@@ -31,7 +31,7 @@ function peerInfoFromObj (obj, callback) {
 
 describe('circuit', function () {
   this.timeout(20 * 1000)
-  
+
   let factory
 
   let jsRelay = new API(`/ip4/127.0.0.1/tcp/31015`)
