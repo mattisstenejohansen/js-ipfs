@@ -49,7 +49,7 @@ describe('verify that kad-dht is doing its thing', () => {
 
   after((done) => factory.dismantle(done))
 
-  it.skip('add a file in C, fetch through B in A', (done) => {
+  it('add a file in C, fetch through B in A', (done) => {
     const file = {
       path: 'testfile.txt',
       content: Buffer.from('hello kad')
